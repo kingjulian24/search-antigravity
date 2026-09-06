@@ -25,16 +25,32 @@ It enables agents and human users to execute surgical, token-efficient queries a
 
 ## Architecture
 
-```mermaid
-flowchart TD
-    A["~/.gemini/antigravity/brain/<br/>transcript.jsonl"] --> B["Incremental Parser<br/>(mtime change detection)"]
-    B --> C[("SQLite + FTS5 Engine<br/>conversations.db")]
-    C --> D["FastMCP Server<br/>(stdio transport)"]
-    D --> E["Antigravity IDE Agent"]
-    D --> F["CLI & Showcase Tools"]
+```text
+~/.gemini/antigravity/brain/
+            │
+  [<conversation-id>/transcript.jsonl]
+            │
+            ▼
+┌───────────────────────────────────┐
+│ Incremental MTime Parser          │
+└─────────────────┬─────────────────┘
+                  │
+                  ▼
+┌───────────────────────────────────┐
+│ SQLite + FTS5 BM25 Engine         │
+│ (conversations.db)                │
+└─────────────────┬─────────────────┘
+                  │
+                  ▼
+┌───────────────────────────────────┐
+│ FastMCP Server (stdio)            │
+└─────────┬───────────────────┬─────┘
+          ▼                   ▼
+  [Antigravity IDE]     [CLI Tools]
 ```
 
 ---
+
 
 
 ## Project Structure
