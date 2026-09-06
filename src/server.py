@@ -24,6 +24,8 @@ from src.db import (
     search_messages,
 )
 from src.indexer import get_brain_dir, sync_index
+import threading
+import time
 
 logging.basicConfig(
     level=logging.INFO,
@@ -32,7 +34,43 @@ logging.basicConfig(
 )
 logger = logging.getLogger("search-antigravity")
 
+DEFAULT_SYNC_INTERVAL_SECONDS = int(os.environ.get("ANTIGRAVITY_SYNC_INTERVAL_SECONDS", "600"))  # 10 minutes
+_last_sync_time: float = 0.0
+_sync_lock = threading.Lock()
+
+
+def trigger_background_sync(force: bool = False) -> None:
+    """Run incremental sync if cooldown interval has elapsed or forced."""
+    global _last_sync_time
+    with _sync_lock:
+        now = time.time()
+        # Cooldown of 30 seconds between auto-checks
+        if not force and (now - _last_sync_time) < 30:
+            return
+        try:
+            sync_index()
+            _last_sync_time = time.time()
+        except Exception as e:
+            logger.warning("Background sync error: %s", e)
+
+
+def _background_sync_loop(interval_seconds: int) -> None:
+    """Daemon thread loop that periodically syncs the index."""
+    logger.info("Background auto-sync thread started (interval: %ds)", interval_seconds)
+    while True:
+        time.sleep(interval_seconds)
+        trigger_background_sync(force=True)
+
+
+def start_background_syncer(interval_seconds: int = DEFAULT_SYNC_INTERVAL_SECONDS) -> None:
+    """Start background sync daemon thread if interval > 0."""
+    if interval_seconds > 0:
+        thread = threading.Thread(target=_background_sync_loop, args=(interval_seconds,), daemon=True)
+        thread.start()
+
+
 mcp = FastMCP("search-antigravity")
+
 
 
 @mcp.tool()
@@ -57,6 +95,10 @@ def search_antigravity_conversations(
     if not db_path.exists():
         logger.info("Database not found on first search. Running initial sync...")
         sync_index()
+    else:
+        # Trigger quick incremental refresh if cooldown has elapsed
+        trigger_background_sync(force=False)
+
 
     conn = get_db_connection()
     try:
@@ -257,7 +299,11 @@ def main() -> None:
         except Exception as e:
             logger.warning("Initial index sync failed: %s", e)
 
+    # Start periodic background synchronization (default: 600s / 10 minutes)
+    start_background_syncer()
+
     mcp.run(transport="stdio")
+
 
 
 if __name__ == "__main__":

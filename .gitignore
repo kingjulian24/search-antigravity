@@ -32,7 +32,10 @@ ENV/
 htmlcov/
 
 # Local SQLite Database & WAL
-conversations.db
-conversations.db-wal
-conversations.db-shm
+conversations.db*
 test_conversations.db*
+demo.db*
+*.db*
+**/*.db*
+
+

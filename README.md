@@ -47,7 +47,7 @@ search-antigravity/
 ### 1. Create Virtual Environment and Install Dependencies
 
 ```bash
-cd /Users/julianbrown/projects/search-antigravity
+cd /path/to/search-antigravity
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
@@ -66,6 +66,15 @@ Options:
 
 ---
 
+## Automated Background Synchronization
+
+`search-antigravity` synchronizes transcripts automatically without requiring manual commands:
+* **Periodic Background Daemon:** A background thread periodically scans and indexes new turns every **10 minutes** (configurable via `ANTIGRAVITY_SYNC_INTERVAL_SECONDS`).
+* **Just-In-Time Refresh:** Running `search_antigravity_conversations` executes a quick 15ms incremental refresh if 30 seconds have passed since the last sync.
+* **Agent-Triggered:** Agents can invoke `sync_antigravity_index` on demand at any point.
+
+---
+
 ## Antigravity IDE Configuration
 
 Add `search-antigravity` to your global MCP configuration in `~/.gemini/config/mcp_config.json`:
@@ -74,16 +83,17 @@ Add `search-antigravity` to your global MCP configuration in `~/.gemini/config/m
 {
   "mcpServers": {
     "search-antigravity": {
-      "command": "/Users/julianbrown/projects/search-antigravity/.venv/bin/python",
+      "command": "/path/to/search-antigravity/.venv/bin/python",
       "args": [
         "-m",
         "src.server"
       ],
-      "cwd": "/Users/julianbrown/projects/search-antigravity"
+      "cwd": "/path/to/search-antigravity"
     }
   }
 }
 ```
+
 
 ---
 
@@ -119,9 +129,22 @@ Triggers an incremental scan of `~/.gemini/antigravity/brain/` and returns index
 ---
 
 ## Testing
-
-Run unit and integration tests:
-
+ 
 ```bash
 .venv/bin/pytest tests/ -v
 ```
+
+---
+
+## Privacy, Anonymization & Public Showcase
+
+* **Local-Only & Private:** The SQLite database (`conversations.db*`) stores parsed session logs strictly on your local filesystem and is ignored by `.gitignore`. Nothing is sent to external servers.
+* **Showcase / Demo Dataset Generator:** If you want to demonstrate or showcase this project publicly without exposing personal transcripts or proprietary code, you can generate a clean, synthetic dataset:
+  ```bash
+  python scripts/generate_sample_data.py
+  ```
+  This creates realistic, anonymized developer discussions in `data/sample_brain/`. You can index and test against this demo database:
+  ```bash
+  python run_sync.py --brain-dir data/sample_brain --db-path data/demo.db
+  ```
+
