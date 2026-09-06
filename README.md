@@ -141,10 +141,18 @@ Triggers an incremental scan of `~/.gemini/antigravity/brain/` and returns index
 * **Local-Only & Private:** The SQLite database (`conversations.db*`) stores parsed session logs strictly on your local filesystem and is ignored by `.gitignore`. Nothing is sent to external servers.
 * **Showcase / Demo Dataset Generator:** If you want to demonstrate or showcase this project publicly without exposing personal transcripts or proprietary code, you can generate a clean, synthetic dataset:
   ```bash
+  # 1. Generate realistic synthetic developer discussions
   python scripts/generate_sample_data.py
-  ```
-  This creates realistic, anonymized developer discussions in `data/sample_brain/`. You can index and test against this demo database:
-  ```bash
+
+  # 2. Index the demo dataset into a standalone demo database
   python run_sync.py --brain-dir data/sample_brain --db-path data/demo.db
+
+  # 3. Launch the MCP server using the demo database
+  ANTIGRAVITY_DB_PATH=data/demo.db python -m src.server
   ```
+  *(Or inspect tools interactively via MCP Inspector)*:
+  ```bash
+  ANTIGRAVITY_DB_PATH=data/demo.db npx @modelcontextprotocol/inspector .venv/bin/python -m src.server
+  ```
+
 
