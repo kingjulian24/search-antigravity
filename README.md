@@ -143,10 +143,11 @@ Triggers an incremental scan of `~/.gemini/antigravity/brain/` and returns index
 ---
 
 ## Testing
- 
-```bash
+
+```sh
 .venv/bin/pytest tests/ -v
 ```
+
 
 ---
 
