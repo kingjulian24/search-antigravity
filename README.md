@@ -132,14 +132,27 @@ Add `search-antigravity` to your global MCP configuration in `~/.gemini/config/m
         "-m",
         "src.server"
       ],
-      "cwd": "/path/to/search-antigravity"
+      "cwd": "/path/to/search-antigravity",
+      "env": {
+        "ANTIGRAVITY_SYNC_INTERVAL_SECONDS": "600"
+      }
     }
   }
 }
 ```
 
+### Environment Variables Reference
+
+All runtime settings can be customized in the `"env"` block of `~/.gemini/config/mcp_config.json` (or exported in your shell):
+
+| Variable | Default | Description |
+|---|---|---|
+| `ANTIGRAVITY_SYNC_INTERVAL_SECONDS` | `600` (10 min) | How often the background daemon thread auto-scans for new conversation turns. Set to `0` to disable. |
+| `ANTIGRAVITY_BRAIN_DIR` | `~/.gemini/antigravity/brain` | Root directory containing Antigravity conversation sessions (`transcript.jsonl`). |
+| `ANTIGRAVITY_DB_PATH` | `./conversations.db` | Target file path for the SQLite database and FTS5 search index. |
 
 ---
+
 
 ## MCP Tools Reference
 
