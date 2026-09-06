@@ -5,11 +5,13 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 import sqlite3
 import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
+
 
 from src.db import get_db_connection, init_db
 
@@ -91,10 +93,12 @@ def parse_transcript_file(transcript_path: Path, conversation_id: str) -> Tuple[
                 latest_time = created_at
 
                 if not derived_title and msg_type == "USER_INPUT" and content:
-                    first_line = content.splitlines()[0].strip()
-                    # Strip markdown heading marks
-                    first_line = first_line.lstrip("#").strip()
-                    derived_title = first_line[:100]
+                    for line in content.splitlines():
+                        candidate = re.sub(r"<[^>]+>", "", line).strip().lstrip("#").strip()
+                        if candidate:
+                            derived_title = candidate[:100]
+                            break
+
 
                 messages.append({
                     "conversation_id": conversation_id,
@@ -173,11 +177,11 @@ def sync_index(
     }
 
     # Query currently indexed conversation modification times
+    # Query currently indexed conversation metadata
     existing_mtimes: Dict[str, float] = {}
-    if not force_rescan:
-        rows = conn.execute("SELECT conversation_id, last_indexed_mtime FROM conversations").fetchall()
-        for r in rows:
-            existing_mtimes[r["conversation_id"]] = r["last_indexed_mtime"] or 0.0
+    rows = conn.execute("SELECT conversation_id, last_indexed_mtime FROM conversations").fetchall()
+    for r in rows:
+        existing_mtimes[r["conversation_id"]] = r["last_indexed_mtime"] or 0.0
 
     for conv_id, transcript_file in transcript_items:
         try:
@@ -191,13 +195,15 @@ def sync_index(
             continue
 
         meta, messages = parse_transcript_file(transcript_file, conv_id)
-        is_update = prev_mtime is not None
+        is_update = conv_id in existing_mtimes
 
         with conn:
             # Delete existing records if updating
             if is_update:
                 conn.execute("DELETE FROM messages WHERE conversation_id = ?", (conv_id,))
                 conn.execute("DELETE FROM conversations WHERE conversation_id = ?", (conv_id,))
+            existing_mtimes[conv_id] = current_mtime
+
 
             # Insert conversation metadata
             conn.execute("""
