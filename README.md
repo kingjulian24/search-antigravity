@@ -25,7 +25,7 @@ It enables agents and human users to execute surgical, token-efficient queries a
 
 ## Architecture
 
-```text
+```plaintext
 ~/.gemini/antigravity/brain/
             │
   [<conversation-id>/transcript.jsonl]
@@ -55,7 +55,7 @@ It enables agents and human users to execute surgical, token-efficient queries a
 
 ## Project Structure
 
-```text
+```plaintext
 search-antigravity/
 ├── pyproject.toml              # Build & dependency metadata
 ├── requirements.txt            # Core dependencies (mcp, pydantic, pytest)
