@@ -11,10 +11,12 @@ It enables agents and human users to execute surgical, token-efficient queries a
 ## Features
 
 * **Incremental MTime-Based Indexing:** Scans session folders and only re-indexes modified or newly added transcripts.
+* **Automated 10-Minute Daemon & JIT Refresh:** Automatically wakes up every 10 minutes to sync new turns in the background, with just-in-time checks before search queries.
 * **SQLite + FTS5 BM25 Search Engine:** Fast full-text search with keyword highlighting, phrase matching (`"exact phrase"`), prefix queries (`term*`), and boolean operators (`AND`, `OR`, `NOT`).
 * **Noise Mitigation:** Strips and truncates oversized binary/tool outputs to keep the search index compact and high-signal.
 * **Dual MCP SDK Compatibility:** Seamlessly supports both MCP Python SDK 2.x (`MCPServer`) and 1.x (`FastMCP`).
 * **5 Core MCP Tools:**
+
   1. `search_antigravity_conversations`: Search across conversations with BM25 snippet highlights.
   2. `get_antigravity_step`: Inspect dialogue turns before/after any target step index.
   3. `list_antigravity_conversations`: Browse recent conversations and activity ranges.
@@ -99,11 +101,23 @@ Options:
 ## Automated Background Synchronization
 
 `search-antigravity` synchronizes transcripts automatically without requiring manual commands:
-* **Periodic Background Daemon:** A background thread periodically scans and indexes new turns every **10 minutes** (configurable via `ANTIGRAVITY_SYNC_INTERVAL_SECONDS`).
-* **Just-In-Time Refresh:** Running `search_antigravity_conversations` executes a quick 15ms incremental refresh if 30 seconds have passed since the last sync.
-* **Agent-Triggered:** Agents can invoke `sync_antigravity_index` on demand at any point.
+
+* **Periodic Background Daemon:** A background thread automatically scans and indexes new turns every **10 minutes** (600 seconds) while the server process is running.
+* **Just-In-Time Refresh:** Running `search_antigravity_conversations` executes a quick 15ms incremental check if 30 seconds have passed since the last sync, ensuring searches are never stale.
+* **Agent-Triggered On-Demand:** Agents can invoke `sync_antigravity_index` whenever needed during a session.
+
+### Customizing the Sync Interval
+You can adjust the background daemon interval by setting the `ANTIGRAVITY_SYNC_INTERVAL_SECONDS` environment variable (default is `600` seconds / 10 minutes). For example, to sync every 5 minutes:
+
+```json
+"env": {
+  "ANTIGRAVITY_SYNC_INTERVAL_SECONDS": "300"
+}
+```
+*(Set to `0` to disable the background timer and rely only on just-in-time search refreshes).*
 
 ---
+
 
 ## Antigravity IDE Configuration
 
